@@ -98,6 +98,7 @@ def main():
 
     had_labels = False
     label_path = osp.join(args.path, f"{args.split}.{args.labels}")
+    N = centroids.shape[0]
 
     with torch.no_grad():
         with open(osp.join(args.path, f"{args.split}.src"), "w") as fp, open(
@@ -112,7 +113,9 @@ def main():
 
                 f = f.cpu().numpy()
 
-                _, z = faiss_index.search(f, 1)
+                #_, z = faiss_index.search(f, 1)
+                T = f.shape[0]
+                z = np.sum((f.reshape(T, 1, -1) - centroids.reshape(1, N, -1))**2, -1).argmin(-1)
 
                 print(" ".join(str(x.item()) for x in z), file=fp)
                 print(fname, file=pp)
