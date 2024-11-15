@@ -73,19 +73,24 @@ def parse_faiss_specs(specs_str):
 
 class Wav2VecFeatureReader(object):
     def __init__(self, cp_file, layer):
-        state = fairseq.checkpoint_utils.load_checkpoint_to_cpu(cp_file)
+        #state = fairseq.checkpoint_utils.load_checkpoint_to_cpu(cp_file)
+        #if "cfg" in state:
+        #    w2v_args = state["cfg"]
+        #    task = fairseq.tasks.setup_task(w2v_args.task)
+        #    model = task.build_model(w2v_args.model)
+        #else:
+        #    w2v_args = state["args"]
+        #    task = fairseq.tasks.setup_task(w2v_args)
+        #    model = task.build_model(w2v_args)
+        #model.load_state_dict(state["model"], strict=True)
+        model, cfg, task = fairseq.checkpoint_utils.load_model_ensemble_and_task(
+            [cp_file]
+        )
+        model = model[0]
+        self._name = cfg['task']['_name']
 
         self.layer = layer
 
-        if "cfg" in state:
-            w2v_args = state["cfg"]
-            task = fairseq.tasks.setup_task(w2v_args.task)
-            model = task.build_model(w2v_args.model)
-        else:
-            w2v_args = state["args"]
-            task = fairseq.tasks.setup_task(w2v_args)
-            model = task.build_model(w2v_args)
-        model.load_state_dict(state["model"], strict=True)
         model.eval()
         model.cuda()
         self.model = model
@@ -101,10 +106,11 @@ class Wav2VecFeatureReader(object):
         x = self.read_audio(loc)
         with torch.no_grad():
             source = torch.from_numpy(x).view(1, -1).float().cuda()
-            res = self.model(
-                source=source, mask=False, features_only=True, layer=self.layer
-            )
-            return res["layer_results"][self.layer][0].squeeze(1)
+            if self._name == 'hubert_pretraining':
+                res = self.model(source=source, mask=False, features_only=True, output_layer=self.layer)
+            else:
+                res = self.model(source=source, mask=False, features_only=True, layer=self.layer)
+            return res["x"].squeeze(0)
 
 
 def get_iterator(args):

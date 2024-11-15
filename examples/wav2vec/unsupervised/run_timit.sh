@@ -1,24 +1,25 @@
 export FAIRSEQ_ROOT=/lustre/s2196654/fairseq
+ssl=wav2vec2_large_ll60k
 << EOF
 mkdir -p hub/wav2vec2.0-large
 wget https://dl.fbaipublicfiles.com/fairseq/wav2vec/libri960_big.pt
 mv libri960_big.pt hub/wav2vec2.0-large/
-mkdir -p exp/timit/wav2vec2_large_ll60k
+mkdir -p exp/timit/$ssl
 
 
 # timit
-bash scripts/prepare_timit.sh ../../../../dataset/timit/timit-wav exp/timit/wav2vec2_large_ll60k  hub/wav2vec2.0-large/libri960_big.pt 
+bash scripts/prepare_timit.sh ../../../../dataset/timit/timit-wav exp/timit/$ssl  hub/wav2vec2.0-large/libri960_big.pt 
 EOF
 
 PREFIX=w2v_unsup_gan_xp
-cp ${PWD}/exp/timit/wav2vec2_large_ll60k/matched/feat/dic* ${PWD}/exp/timit/wav2vec2_large_ll60k/matched/feat/precompute_pca512_cls128_mean_pooled
+cp ${PWD}/exp/timit/$ssl/matched/feat/dic* ${PWD}/exp/timit/$ssl/matched/feat/precompute_pca512_cls128_mean_pooled
 
 # For wav2vec-U, audio features are pre-segmented
 CONFIG_NAME=w2vu
-TASK_DATA=${PWD}/exp/timit/wav2vec2_large_ll60k/matched/feat/precompute_pca512_cls128_mean_pooled
+TASK_DATA=${PWD}/exp/timit/$ssl/matched/feat/precompute_pca512_cls128_mean_pooled
 
 # Unpaired text input
-TEXT_DATA=${PWD}/exp/timit/wav2vec2_large_ll60k/unmatched/phones  # path to fairseq-preprocessed GAN data (phones dir)
+TEXT_DATA=${PWD}/exp/timit/$ssl/unmatched/phones  # path to fairseq-preprocessed GAN data (phones dir)
 KENLM_PATH=/lustre/s2196654/espnet/egs2/timit/uasr1/exp/ngram/4gram.bin
 
 #PYTHONPATH=$FAIRSEQ_ROOT PREFIX=$PREFIX fairseq-hydra-train \

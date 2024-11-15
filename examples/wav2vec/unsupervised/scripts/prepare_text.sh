@@ -46,7 +46,11 @@ echo $target_dir
 echo "min phone seen threshold is $min_phones"
 
 mkdir -p $target_dir
-python $FAIRSEQ_ROOT/examples/wav2vec/unsupervised/scripts/normalize_and_filter_text.py --lang $lg --fasttext-model $lid_path < $text_path | grep -v '\-\-\-' >! $target_dir/lm.upper.lid.txt
+if (($min_phones > 1)); then 
+    python $FAIRSEQ_ROOT/examples/wav2vec/unsupervised/scripts/normalize_and_filter_text.py --lang $lg --fasttext-model $lid_path < $text_path | grep -v '\-\-\-' > $target_dir/lm.upper.lid.txt
+else
+    cp $text_path $target_dir/lm.upper.lid.txt
+fi
 python $FAIRSEQ_ROOT/fairseq_cli/preprocess.py --dataset-impl mmap --trainpref $target_dir/lm.upper.lid.txt --only-source --destdir $target_dir --thresholdsrc 1 --padding-factor 1 --dict-only
 cut -f1 -d' ' $target_dir/dict.txt | grep -v -x '[[:punct:]]*' | grep -Pv '\d\d\d\d\d+' > $target_dir/words.txt
 

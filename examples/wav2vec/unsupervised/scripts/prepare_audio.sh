@@ -59,8 +59,8 @@ setopt shwordsplit
 #  --save-dir $tgt_dir --checkpoint $model --layer $layer
 #done
 
-#python $FAIRSEQ_ROOT/examples/wav2vec/unsupervised/scripts/wav2vec_cluster_faiss.py $tgt_dir/${train_split}.tsv \
-#--checkpoint $model --save-dir $tgt_dir -f "CLUS128" --sample-pct 1.0
+python $FAIRSEQ_ROOT/examples/wav2vec/unsupervised/scripts/wav2vec_cluster_faiss.py $tgt_dir/${train_split}.tsv \
+--checkpoint $model --save-dir $tgt_dir -f "CLUS128" --sample-pct 1.0
 
 for split in $all_splits; do
   python $FAIRSEQ_ROOT/examples/wav2vec/unsupervised/scripts/wav2vec_apply_cluster_faiss.py $tgt_dir \

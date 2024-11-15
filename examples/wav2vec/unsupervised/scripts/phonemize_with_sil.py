@@ -76,7 +76,12 @@ def main():
 
         if surround:
             phones.append(sil)
-        print(" ".join(phones))
+
+        phones_filtered = [phones[0]]
+        for i in range(len(phones)-1):
+            if phones[i+1] != phones[i] and phones[i+1] != "'":
+                phones_filtered.append(phones[i+1])
+        print(" ".join(phones_filtered))
 
 
 if __name__ == "__main__":

@@ -44,6 +44,7 @@ class Wav2VecFeatureReader(object):
         self.model = model
         self.task = task
         self.layer = layer
+        self._name = cfg['task']['_name']
 
     def read_audio(self, fname):
         """Load an audio file and return PCM along with the sample rate"""
@@ -62,7 +63,10 @@ class Wav2VecFeatureReader(object):
                     source = F.layer_norm(source, source.shape)
             source = source.view(1, -1)
 
-            m_res = self.model(source=source, mask=False, features_only=True, layer=self.layer)
+            if self._name == 'hubert_pretraining':
+                m_res = self.model(source=source, mask=False, features_only=True, output_layer=self.layer)
+            else:
+                m_res = self.model(source=source, mask=False, features_only=True, layer=self.layer)
             return m_res["x"].squeeze(0).cpu()
 
 
