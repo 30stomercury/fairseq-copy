@@ -534,6 +534,7 @@ class FairseqTask(object):
             loss *= 0
         with torch.autograd.profiler.record_function("backward"):
             optimizer.backward(loss)
+            #print(model.quantizer.codebook.grad.abs().sum())
         return loss, sample_size, logging_output
 
     def valid_step(self, sample, model, criterion):

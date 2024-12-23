@@ -99,9 +99,16 @@ def learn_kmeans(
     n_init,
     reassignment_ratio,
     max_no_improvement,
+    normalize,
 ):
     np.random.seed(seed)
     feat = load_feature(feat_dir, split, nshard, seed, percent)
+    if normalize:
+        mean = feat.mean(0)
+        std = feat.std(0)
+        feat = (feat - mean) / std
+        np.save(feat_dir + '/mean.npy', mean)
+        np.save(feat_dir + '/std.npy', std)
     km_model = get_km_model(
         n_clusters,
         init,
@@ -140,6 +147,7 @@ if __name__ == "__main__":
     parser.add_argument("--max_no_improvement", default=100, type=int)
     parser.add_argument("--n_init", default=20, type=int)
     parser.add_argument("--reassignment_ratio", default=0.0, type=float)
+    parser.add_argument("--normalize", default=False, type=bool)
     args = parser.parse_args()
     logging.info(str(args))
 

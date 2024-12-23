@@ -1,13 +1,14 @@
 # @package _group_
 
 common:
-  fp16: true
+  fp16: false
   log_format: json
   log_interval: 200
   seed: 1337
   tensorboard_logdir: tblog
 
 checkpoint:
+  save_dir: exp/hubert3
   save_interval_updates: 25000
   keep_interval_updates: 1
   no_epoch_checkpoints: true
@@ -36,7 +37,7 @@ task:
 
 dataset:
   num_workers: 6
-  max_tokens: 1400000
+  max_tokens: 8000000
   skip_invalid_size_inputs_valid_test: true
   validate_interval: 5
   validate_interval_updates: 10000
@@ -48,8 +49,8 @@ criterion:
   loss_weights: [10,]
 
 optimization:
-  max_update: 400000
-  lr: [0.0005]
+  max_update: 900000
+  lr: [0.0001]
   clip_norm: 10.0
 
 optimizer:
@@ -79,6 +80,7 @@ model:
   feature_grad_mult: 0.1
   untie_final_proj: true
   activation_dropout: 0.0
+  encoder_layers: 12
 
 hydra:
   job:
@@ -91,7 +93,7 @@ hydra:
           - task.data
           - task.label_dir
   run:
-    dir: ???
+    dir: exp/hubert3
   sweep:
     dir: ???
     subdir: ${hydra.job.config_name}__${hydra.job.override_dirname}

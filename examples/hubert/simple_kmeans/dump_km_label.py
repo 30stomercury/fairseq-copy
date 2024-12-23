@@ -60,6 +60,9 @@ def get_feat_iterator(feat_dir, split, nshard, rank):
 
     def iterate():
         feat = np.load(feat_path, mmap_mode="r")
+        mean = np.load(f"{feat_dir}/mean.npy", mmap_mode="r")
+        std = np.load(f"{feat_dir}/std.npy", mmap_mode="r")
+        feat = (feat - mean) / std
         assert feat.shape[0] == (offsets[-1] + lengs[-1])
         for offset, leng in zip(offsets, lengs):
             yield feat[offset: offset + leng]
