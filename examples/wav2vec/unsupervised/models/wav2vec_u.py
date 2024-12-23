@@ -61,6 +61,7 @@ class Wav2vec_UConfig(FairseqDataclass):
     generator_bias: bool = False
     generator_dropout: float = 0.0
     generator_batch_norm: int = 0
+    generator_batch_norm_init_stats: str = ""
     generator_residual: bool = False
 
     blank_weight: float = 0
@@ -316,6 +317,12 @@ class Generator(nn.Module):
         if self.batch_norm:
             self.bn = nn.BatchNorm1d(input_dim)
             self.bn.weight.data.fill_(cfg.generator_batch_norm)
+            if cfg.generator_batch_norm_init_stats != "": 
+                mean = np.load(f"{cfg.generator_batch_norm_init_stats}/train-mean.npy")
+                std = np.load(f"{cfg.generator_batch_norm_init_stats}/train-std.npy")
+                self.bn.running_mean = torch.from_numpy(mean).to(self.bn.weight)
+                self.bn.running_var = torch.from_numpy(std**2).to(self.bn.weight)
+                self.bn.momentum = 0.0
         if self.residual:
             self.in_proj = nn.Linear(input_dim, input_dim)
 

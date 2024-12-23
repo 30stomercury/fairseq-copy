@@ -93,7 +93,7 @@ CONFIG_NAME=w2vu-hsmm
 #TASK_DATA=/lustre/s2196654/results/20ms/unsupervised-asr/linear-hsmm/train-clean-100/hubert-l9/3/decoded_feats/pooled/train-clean-100/
 #TASK_DATA=/lustre/s2196654/results/20ms/unsupervised-asr/linear-hsmm/train-clean-100/hubert-l9/3/decoded_feats/pooled_large/train-clean-100/
 #TASK_DATA=/lustre/s2196654/results/20ms/unsupervised-asr/linear-hsmm/train-clean-100/hubert-l9-gold/0/decoded_feats/pooled_large/train-clean-100/
-TASK_DATA=/home/s2196654/results/20ms/unsupervised-asr/linear-hsmm/train-clean-100/hubert-l9-unitrans/2/decoded_feats/pooled_large-0.1/train-clean-100/
+TASK_DATA=/home/s2196654/results/20ms/unsupervised-asr/linear-hsmm/train-clean-100/hubert-l9-unitrans/2/decoded_feats/pooled_large/train-clean-100/
 
 # Unpaired text input
 TEXT_DATA=${PWD}/${unmatched_path}/phones  # path to fairseq-preprocessed GAN data (phones dir)
@@ -106,14 +106,15 @@ PYTHONPATH=$FAIRSEQ_ROOT PREFIX=$PREFIX fairseq-hydra-train \
     task.text_data=${TEXT_DATA} \
     task.kenlm_path=${KENLM_PATH} \
     common.user_dir=${FAIRSEQ_ROOT}/examples/wav2vec/unsupervised \
-    optimizer.groups.generator.optimizer.lr='[0.0004]' \
-    optimizer.groups.generator.lr=\[0.0004\] \
-    optimizer.groups.discriminator.optimizer.lr='[0.0005]' \
-    optimizer.groups.discriminator.lr=\[0.0005\] \
+    optimizer.groups.generator.optimizer.lr='[0.00005]' \
+    optimizer.groups.generator.lr=\[0.00005\] \
+    optimizer.groups.discriminator.optimizer.lr='[0.0003]' \
+    optimizer.groups.discriminator.lr=\[0.0003\] \
+    model.generator_batch_norm_init_stats=${TASK_DATA} \
     model.discriminator_kernel=8 \
     model.generator_kernel=9 \
-    model.code_penalty=4.0 model.gradient_penalty=1.5 \
-    model.smoothness_weight=0.5 'common.seed=range(0,5)'
+    model.code_penalty=3.0 model.gradient_penalty=1.0 \
+    model.smoothness_weight=1.5 'common.seed=range(0,5)'
 
 
 #for seed in 0

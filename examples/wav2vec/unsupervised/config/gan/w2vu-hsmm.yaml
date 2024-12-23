@@ -47,7 +47,7 @@ criterion:
     - code_ppl
 
 optimization:
-  max_update: 150000
+  max_update: 200000
   clip_norm: 5.0
   lr: [0]
 
@@ -100,6 +100,7 @@ model:
   generator_dropout: 0.1
   generator_batch_norm: 30
   generator_residual: true
+  generator_batch_norm_init_stats: ""
 
   smoothness_weight: 1.5
   smoothing: 0
