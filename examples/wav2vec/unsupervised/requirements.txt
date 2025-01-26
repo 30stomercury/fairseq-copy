@@ -1,0 +1,9 @@
+rVADfast
+npy_append_array
+faiss-gpu
+editdistance
+g2p_en
+fasttext
+flashlight-text
+/lustre/s2196654/sequence
+/lustre/s2196654/unsupervised-asr/master.zip 

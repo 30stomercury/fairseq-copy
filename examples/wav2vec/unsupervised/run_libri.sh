@@ -87,42 +87,72 @@ cp manifest/wav2vec/test-clean-vad/train.tsv  $matched_path/test.tsv
 PREFIX=w2v_unsup_gan_xp
 
 # For wav2vec-U, audio features are pre-segmented
-#CONFIG_NAME=w2vu
-#TASK_DATA=${PWD}/${matched_path}/feat/precompute_pca512_cls128_mean_pooled
-CONFIG_NAME=w2vu-hsmm
+CONFIG_NAME=w2vu
+TASK_DATA=${PWD}/${matched_path}/feat/precompute_pca512_cls128_mean_pooled
+#CONFIG_NAME=w2vu-hsmm
 #TASK_DATA=/lustre/s2196654/results/20ms/unsupervised-asr/linear-hsmm/train-clean-100/hubert-l9/3/decoded_feats/pooled/train-clean-100/
 #TASK_DATA=/lustre/s2196654/results/20ms/unsupervised-asr/linear-hsmm/train-clean-100/hubert-l9/3/decoded_feats/pooled_large/train-clean-100/
 #TASK_DATA=/lustre/s2196654/results/20ms/unsupervised-asr/linear-hsmm/train-clean-100/hubert-l9-gold/0/decoded_feats/pooled_large/train-clean-100/
-TASK_DATA=/home/s2196654/results/20ms/unsupervised-asr/linear-hsmm/train-clean-100/hubert-l9-unitrans/2/decoded_feats/pooled_large/train-clean-100/
+#TASK_DATA=/home/s2196654/results/20ms/unsupervised-asr/linear-hsmm/train-clean-100/hubert-l9-unitrans/2/decoded_feats/pooled_large/train-clean-100/
 
 # Unpaired text input
 TEXT_DATA=${PWD}/${unmatched_path}/phones  # path to fairseq-preprocessed GAN data (phones dir)
 KENLM_PATH=${PWD}/exp/train-clean-100/wav2vec2_large_960/unmatched/phones/lm.phones.filtered.04.bin #${PWD}/${unmatched_path}/phones/lm.phones.filtered.04.bin
 
+#PYTHONPATH=$FAIRSEQ_ROOT PREFIX=$PREFIX fairseq-hydra-train \
+#    -m --config-dir config/gan \
+#    --config-name $CONFIG_NAME \
+#    task.data=${TASK_DATA} \
+#    task.text_data=${TEXT_DATA} \
+#    task.kenlm_path=${KENLM_PATH} \
+#    common.user_dir=${FAIRSEQ_ROOT}/examples/wav2vec/unsupervised \
+#    optimizer.groups.generator.optimizer.lr='[0.00005]' \
+#    optimizer.groups.generator.lr=\[0.00005\] \
+#    optimizer.groups.discriminator.optimizer.lr='[0.0003]' \
+#    optimizer.groups.discriminator.lr=\[0.0003\] \
+#    model.generator_batch_norm_init_stats=${TASK_DATA} \
+#    model.discriminator_kernel=8 \
+#    model.generator_kernel=9 \
+#    model.code_penalty=3.0 model.gradient_penalty=1.0 \
+#    model.smoothness_weight=1.5 'common.seed=range(0,5)'
+
+
+#PYTHONPATH=$FAIRSEQ_ROOT PREFIX=$PREFIX fairseq-hydra-train \
+#    -m --config-dir config/gan \
+#    --config-name $CONFIG_NAME \
+#    task.data=${TASK_DATA} \
+#    task.text_data=${TEXT_DATA} \
+#    task.kenlm_path=${KENLM_PATH} \
+#    common.user_dir=${FAIRSEQ_ROOT}/examples/wav2vec/unsupervised \
+#    model.code_penalty=4.0 model.gradient_penalty=2.0 \
+#    model.smoothness_weight=1.0 'common.seed=range(0,5)'
+
 PYTHONPATH=$FAIRSEQ_ROOT PREFIX=$PREFIX fairseq-hydra-train \
-    -m --config-dir config/gan \
-    --config-name $CONFIG_NAME \
-    task.data=${TASK_DATA} \
-    task.text_data=${TEXT_DATA} \
-    task.kenlm_path=${KENLM_PATH} \
-    common.user_dir=${FAIRSEQ_ROOT}/examples/wav2vec/unsupervised \
-    optimizer.groups.generator.optimizer.lr='[0.00005]' \
-    optimizer.groups.generator.lr=\[0.00005\] \
-    optimizer.groups.discriminator.optimizer.lr='[0.0003]' \
-    optimizer.groups.discriminator.lr=\[0.0003\] \
-    model.generator_batch_norm_init_stats=${TASK_DATA} \
-    model.discriminator_kernel=8 \
-    model.generator_kernel=9 \
-    model.code_penalty=3.0 model.gradient_penalty=1.0 \
-    model.smoothness_weight=1.5 'common.seed=range(0,5)'
+      -m --config-dir config/gan \
+      --config-name $CONFIG_NAME \
+      task.data=${TASK_DATA} \
+      task.text_data=${TEXT_DATA} \
+      task.kenlm_path=${KENLM_PATH} \
+      common.user_dir=${FAIRSEQ_ROOT}/examples/wav2vec/unsupervised \
+      hydra.run.dir=multirun/2024-10-23/17-25-48/0 \
+      checkpoint.restore_file=${PWD}/multirun/2024-10-23/17-25-48/0/checkpoint_last.pt 
 
 
+################################################################################################
+
+# w2v-u
+TASK_DATA=${PWD}/${matched_path}/feat/precompute_pca512_cls128_mean_pooled
+ckpt_path=multirun/2024-10-24/17-32-18/
+# hsmm
+#TASK_DATA=/home/s2196654/results/20ms/unsupervised-asr/linear-hsmm/train-clean-100/hubert-l9-unitrans/2/decoded_feats/pooled_large/train-clean-100/
+#ckpt_path=multirun/2024-11-12/19-35-53
+#cp ${TASK_DATA}_pooled/dict.phn.txt ${TASK_DATA}/dict.phn.txt
+#cp ${PWD}/${matched_path}/feat/precompute_pca512_cls128_mean_pooled/dict.phn.txt ${TASK_DATA}/dict.phn.txt
 #for seed in 0
 #do
-#python w2vu_generate.py --config-dir config/generate --config-name viterbi \
+#python3 w2vu_generate.py --config-dir config/generate --config-name viterbi \
 #fairseq.common.user_dir=${FAIRSEQ_ROOT}/examples/wav2vec/unsupervised \
 #fairseq.task.data=${TASK_DATA} \
-#fairseq.common_eval.path=${PWD}/multirun/2024-10-16/01-20-20/$seed/checkpoint_last.pt \
-#fairseq.dataset.gen_subset=valid results_path=multirun/2024-10-16/01-20-20/$seed/results
+#fairseq.common_eval.path=${PWD}/$ckpt_path/$seed/checkpoint_last.pt \
+#fairseq.dataset.gen_subset=valid results_path=${PWD}/$ckpt_path/$seed/results
 #done
-#
