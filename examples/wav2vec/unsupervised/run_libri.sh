@@ -1,5 +1,5 @@
 set -ex
-export FAIRSEQ_ROOT=/lustre/s2196654/fairseq
+export FAIRSEQ_ROOT=/lustre/s2196654/fairseq-copy
 export KALDI_ROOT=/lustre/s2196654/pykaldi/tools/kaldi
 
 
@@ -127,32 +127,40 @@ KENLM_PATH=${PWD}/exp/train-clean-100/wav2vec2_large_960/unmatched/phones/lm.pho
 #    model.code_penalty=4.0 model.gradient_penalty=2.0 \
 #    model.smoothness_weight=1.0 'common.seed=range(0,5)'
 
-PYTHONPATH=$FAIRSEQ_ROOT PREFIX=$PREFIX fairseq-hydra-train \
-      -m --config-dir config/gan \
-      --config-name $CONFIG_NAME \
-      task.data=${TASK_DATA} \
-      task.text_data=${TEXT_DATA} \
-      task.kenlm_path=${KENLM_PATH} \
-      common.user_dir=${FAIRSEQ_ROOT}/examples/wav2vec/unsupervised \
-      hydra.run.dir=multirun/2024-10-23/17-25-48/0 \
-      checkpoint.restore_file=${PWD}/multirun/2024-10-23/17-25-48/0/checkpoint_last.pt 
-
+# resume training
+#PYTHONPATH=$FAIRSEQ_ROOT PREFIX=$PREFIX fairseq-hydra-train \
+#      -m --config-dir config/gan \
+#      --config-name $CONFIG_NAME \
+#      task.data=${TASK_DATA} \
+#      task.text_data=${TEXT_DATA} \
+#      task.kenlm_path=${KENLM_PATH} \
+#      common.user_dir=${FAIRSEQ_ROOT}/examples/wav2vec/unsupervised \
+#      hydra.run.dir=multirun/2024-10-23/17-25-48/0 \
+#      checkpoint.restore_file=${PWD}/multirun/2024-10-23/17-25-48/0/checkpoint_last.pt 
+#
 
 ################################################################################################
 
 # w2v-u
-TASK_DATA=${PWD}/${matched_path}/feat/precompute_pca512_cls128_mean_pooled
-ckpt_path=multirun/2024-10-24/17-32-18/
+#TASK_DATA=${PWD}/${matched_path}/feat/precompute_pca512_cls128_mean_pooled
+#ckpt_path=multirun/2024-10-23/17-25-48/
 # hsmm
 #TASK_DATA=/home/s2196654/results/20ms/unsupervised-asr/linear-hsmm/train-clean-100/hubert-l9-unitrans/2/decoded_feats/pooled_large/train-clean-100/
-#ckpt_path=multirun/2024-11-12/19-35-53
-#cp ${TASK_DATA}_pooled/dict.phn.txt ${TASK_DATA}/dict.phn.txt
-#cp ${PWD}/${matched_path}/feat/precompute_pca512_cls128_mean_pooled/dict.phn.txt ${TASK_DATA}/dict.phn.txt
+#ckpt_path=multirun/2024-11-13/13-03-33/
+#cp -n ${PWD}/${matched_path}/feat/precompute_pca512_cls128_mean_pooled/valid.phn ${TASK_DATA}
+#cp -n ${PWD}/${unmatched_path}/phones/dict.txt ${TASK_DATA}/dict.phn.txt
 #for seed in 0
 #do
 #python3 w2vu_generate.py --config-dir config/generate --config-name viterbi \
-#fairseq.common.user_dir=${FAIRSEQ_ROOT}/examples/wav2vec/unsupervised \
-#fairseq.task.data=${TASK_DATA} \
-#fairseq.common_eval.path=${PWD}/$ckpt_path/$seed/checkpoint_last.pt \
-#fairseq.dataset.gen_subset=valid results_path=${PWD}/$ckpt_path/$seed/results
+#    fairseq.common.user_dir=${FAIRSEQ_ROOT}/examples/wav2vec/unsupervised \
+#    fairseq.task.data=${TASK_DATA} \
+#    fairseq.common_eval.path=${PWD}/$ckpt_path/$seed/checkpoint_565_101000.pt \
+#    fairseq.dataset.gen_subset=valid results_path=${PWD}/$ckpt_path/$seed/results \
+#    w2l_decoder=DecoderType.VITERBI \
+#    unit_lm=True \
+#    kenlm_model=${KENLM_PATH} \
+#    lm_model=${KENLM_PATH} \
+#    lm_weight=2.0 \
+#    word_score=0.0 \
+#    beam=3
 #done
