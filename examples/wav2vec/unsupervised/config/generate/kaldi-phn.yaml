@@ -1,0 +1,33 @@
+# @package _group_
+
+fairseq:
+  task:
+    _name: unpaired_audio_text
+    labels: phn
+    data: ???
+    sort_by_length: false
+    shuffle: false
+    text_data: ''
+
+  common_eval:
+    path: ???
+    quiet: true
+
+  dataset:
+    gen_subset: valid
+    batch_size: 1
+
+
+w2l_decoder: KALDI
+post_process: silence
+sil_is_blank: true
+blank_mode: add
+unsupervised_tuning: 0 # tuning mode is 0
+kaldi_decoder_config:
+  acoustic_scale: 1
+  hlg_graph_path: /home/s2196654/fairseq-copy/examples/wav2vec/unsupervised/exp/train-clean-100/wav2vec_vox_new/unmatched/fst/phn_to_phn_sil/HLG.phn.lm.phones.filtered.06.fst
+  num_threads: 2
+  output_dict: /home/s2196654/fairseq-copy/examples/wav2vec/unsupervised/exp/train-clean-100/wav2vec_vox_new/unmatched/fst/phn_to_phn_sil/kaldi_dict.lm.phones.filtered.06.txt
+ 
+# THESE HARDLY MATTER
+blank_weight: 0

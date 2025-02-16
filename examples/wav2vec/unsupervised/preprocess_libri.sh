@@ -1,6 +1,8 @@
 set -ex
 export FAIRSEQ_ROOT=/home/s2196654/fairseq-copy
 export KALDI_ROOT=/home/s2196654/pykaldi/tools/kaldi
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/cuda-11.3.0/lib64:/opt/cuda-11.3.0/extras/CUPTI/lib64
+LANG=C
 
 # define variable
 libri_dir=/home/s2196654/dataset/LibriSpeech/
@@ -9,7 +11,7 @@ unmatched_path=exp/train-clean-100/wav2vec_vox_new/unmatched
 subset=train-clean-100
 
 
-<< EOF
+<<EOF
 RVAD_ROOT=.
 subset=dev-clean
 for subset in train-clean-100 dev-clean test-clean dev-other test-other
@@ -38,18 +40,21 @@ cp manifest/wav2vec/test-clean-vad/train.tsv  $matched_path/test.tsv
 zsh scripts/prepare_audio.sh $matched_path $matched_path/feat hub/wav2vec2.0-large/libri960_big.pt 512 14
 zsh scripts/prepare_audio.sh $matched_path $matched_path/feat hub/wav2vec2.0-large/wav2vec_vox_new.pt 512 14
 zsh scripts/prepare_audio.sh $matched_path $matched_path/feat hub/hubert-base/hubert_base_ls960.pt 512 9
+EOF
+
 
 # Text
-wget https://dl.fbaipublicfiles.com/fasttext/supervised-models/lid.176.bin
-mv lid.176.bin exp/train-clean-100/wav2vec2_large_960/
-# unmached 
-for text in train-clean-360 train-other-500
-do
-    find $libri_dir/$text -type f -name "*.txt" -exec cat {} + | cut -d ' ' -f 2- \
-        >> $unmatched_path/860hr-texts.txt
-done
+#wget https://dl.fbaipublicfiles.com/fasttext/supervised-models/lid.176.bin
+#mv lid.176.bin exp/train-clean-100/wav2vec2_large_960/
+## unmached 
+#for text in train-clean-360 train-other-500
+#do
+#    find $libri_dir/$text -type f -name "*.txt" -exec cat {} + | cut -d ' ' -f 2- \
+#        >> $unmatched_path/860hr-texts.txt
+#done
 zsh scripts/prepare_text.sh en $unmatched_path/860hr-texts.txt $unmatched_path 10 G2P exp/train-clean-100/wav2vec2_large_960/lid.176.bin 0.25
 
+<<EOF
 ## matched texts: otherwise no validation error shown
 #split=valid
 for text in dev-clean
@@ -83,63 +88,3 @@ do
     python $FAIRSEQ_ROOT/examples/wav2vec/unsupervised/scripts/phonemize_with_sil.py -s 0 --surround --lexicon $unmatched_path/lexicon_filtered.lst < $matched_path/$split.wrd > $matched_path/$split.phn
 done
 EOF
-
-
-# For wav2vec-U, audio features are pre-segmented
-# Experiments
-PREFIX=w2v_unsup_gan_xp
-CONFIG_NAME=w2vu-hsmm-pca
-
-# === Define config based on segment type ===
-
-# Unpaired text input
-TEXT_DATA=${PWD}/${unmatched_path}/phones  # path to fairseq-preprocessed GAN data (phones dir)
-KENLM_PATH=${PWD}/exp/train-clean-100/wav2vec2_large_960/unmatched/phones/lm.phones.filtered.04.bin #${PWD}/${unmatched_path}/phones/lm.phones.filtered.04.bin
-if [[ "$CONFIG_NAME" == "w2vu-hsmm-pca" ]]; then
-    TASK_DATA=/home/s2196654/results/20ms/unsupervised-asr/linear-hsmm/train-clean-100/hubert-l9-unitrans/2/decoded_feats/wav2vec2_pooled_large-0.1/train-clean-100/
-    #TASK_DATA=/home/s2196654/results/20ms/unsupervised-asr/linear-hsmm/train-clean-100/forced-alignments/0/decoded_feats/wav2vec2_pooled_large/train-clean-100/
-elif [[ "$CONFIG_NAME" == "w2vu" ]]; then
-    TASK_DATA=${PWD}/${matched_path}/feat/precompute_pca512_cls128_mean_pooled
-else
-    echo "Error: Invalid model type '$model_type'"
-    exit 1
-fi
-
-#PYTHONPATH=$FAIRSEQ_ROOT PREFIX=$PREFIX fairseq-hydra-train \
-#    -m --config-dir config/gan \
-#    --config-name $CONFIG_NAME \
-#    task.data=${TASK_DATA} \
-#    task.text_data=${TEXT_DATA} \
-#    task.kenlm_path=${KENLM_PATH} \
-#    common.user_dir=${FAIRSEQ_ROOT}/examples/wav2vec/unsupervised \
-#    optimizer.groups.generator.optimizer.lr='[0.00005]' \
-#    optimizer.groups.generator.lr=\[0.00005\] \
-#    optimizer.groups.discriminator.optimizer.lr='[0.0003]' \
-#    optimizer.groups.discriminator.lr=\[0.0003\] \
-#    model.generator_batch_norm_init_stats=${TASK_DATA} \
-#    model.discriminator_kernel=8 \
-#    model.generator_kernel=9 \
-#    model.code_penalty=3.0 model.gradient_penalty=1.0 \
-#    model.smoothness_weight=1.5 'common.seed=range(0,5)'
-
-PYTHONPATH=$FAIRSEQ_ROOT PREFIX=$PREFIX fairseq-hydra-train \
-    -m --config-dir config/gan \
-    --config-name $CONFIG_NAME \
-    task.data=${TASK_DATA} \
-    task.text_data=${TEXT_DATA} \
-    task.kenlm_path=${KENLM_PATH} \
-    model.smoothness_weight=1 \
-    model.code_penalty=2.0 model.gradient_penalty=2.0 \
-    common.user_dir=${FAIRSEQ_ROOT}/examples/wav2vec/unsupervised 'common.seed=range(0,5)'
-
-# this is for resuming training
-#PYTHONPATH=$FAIRSEQ_ROOT PREFIX=$PREFIX fairseq-hydra-train \
-#      -m --config-dir config/gan \
-#      --config-name $CONFIG_NAME \
-#      task.data=${TASK_DATA} \
-#      task.text_data=${TEXT_DATA} \
-#      task.kenlm_path=${KENLM_PATH} \
-#      common.user_dir=${FAIRSEQ_ROOT}/examples/wav2vec/unsupervised \
-#      hydra.run.dir=multirun/2024-10-23/17-25-48/0 \
-#      checkpoint.restore_file=${PWD}/multirun/2024-10-23/17-25-48/0/checkpoint_last.pt 
-#

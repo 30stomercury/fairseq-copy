@@ -68,10 +68,6 @@ class UnsupGenerateConfig(FairseqDataclass):
         default=None,
         metadata={"help": "path to language model (kenlm or fairseq)"},
     )
-    decode_stride: Optional[float] = field(
-        default=None,
-        metadata={"help": "changing the decoding frequency of the generator"},
-    )
     unit_lm: bool = field(
         default=False,
         metadata={"help": "whether to use unit lm"},
@@ -133,7 +129,6 @@ class UnsupGenerateConfig(FairseqDataclass):
         default=0,
         metadata={"help": "for unsupervised param tuning"},
     )
-
     blank_weight: float = field(
         default=0,
         metadata={"help": "value to add or set for blank emission"},
@@ -148,7 +143,14 @@ class UnsupGenerateConfig(FairseqDataclass):
         default=False,
         metadata={"help": "if true, <SIL> token is same as blank token"},
     )
-
+    kenlm_model: Optional[str] = field(
+        default=None,
+        metadata={"help": "path to kenlm"},
+    )
+    decode_stride: Optional[float] = field(
+        default=None,
+        metadata={"help": "changing the decoding frequency of the generator"},
+    )
     unsupervised_tuning: bool = field(
         default=False,
         metadata={
@@ -200,6 +202,8 @@ def process_predictions(
 
         if "words" in hypo and len(hypo["words"]) > 0:
             hyp_words = " ".join(hypo["words"])
+            if "<SIL>" in hyp_words:
+                hyp_words = post_process(hyp_words, cfg.post_process)
         else:
             hyp_words = post_process(hyp_pieces, cfg.post_process)
 
@@ -397,9 +401,10 @@ def generate(cfg: UnsupGenerateConfig, models, saved_cfg, use_cuda):
     )
     targets = None
     if cfg.targets is not None:
-        tgt_path = os.path.join(
-            cfg.fairseq.task.data, cfg.fairseq.dataset.gen_subset + "." + cfg.targets
-        )
+        #tgt_path = os.path.join(
+        #    cfg.fairseq.task.data, cfg.fairseq.dataset.gen_subset + "." + cfg.targets
+        #)
+        tgt_path = cfg.targets
         if os.path.exists(tgt_path):
             with open(tgt_path, "r") as f:
                 targets = f.read().splitlines()
@@ -563,6 +568,33 @@ def gen_hypos(generator, models, num_feats, sample, task, use_cuda):
             * sample["net_input"]["features"].shape[1]
         )
     hypos = task.inference_step(generator, models, sample, None)
+    #if len(hypos[0][0]['tokens']) != len(hypos[0][0]['tokens'].unique_consecutive()):
+    #    tgt_dict = task.target_dictionary
+    #    print(tgt_dict.string(hypos[0][0]['tokens']))
+    #    hypos[0][0]['tokens'] = hypos[0][0]['tokens'].unique_consecutive()
+
+    # get logits
+#    tgt_dict = task.target_dictionary
+#    num_symbols = (
+#        len([s for s in tgt_dict.symbols if not s.startswith("madeup")])
+#        - tgt_dict.nspecial
+#    )
+#    sil_id = (
+#        tgt_dict.index("<SIL>") if "<SIL>" in tgt_dict else -1
+#    )
+#    # collect predicted ids
+#    res = models[0](**sample['net_input'])
+#    dense_x = res["logits"]
+#    padding_mask = res["padding_mask"]
+#    z = dense_x.argmax(-1)
+#    z[padding_mask] = tgt_dict.pad()
+#    z = z[0]
+#    z = z[
+#        (z >= tgt_dict.nspecial)
+#        & (z < (num_symbols + tgt_dict.nspecial))
+#    ]
+#    z = z.unique_consecutive()
+#    z = z[z != 0]
     return hypos, num_feats
 
 
@@ -595,8 +627,8 @@ def main(cfg: UnsupGenerateConfig, model=None):
             "blank_mode": cfg.blank_mode,
         }
     
-    if cfg.decode_stride:
-        overrides["model"]["generator_stride"] = cfg.decode_stride
+    #if cfg.decode_stride:
+    #    overrides["model"]["generator_stride"] = cfg.decode_stride
 
     if model is None:
         # Load ensemble
@@ -626,6 +658,7 @@ def main(cfg: UnsupGenerateConfig, model=None):
         logger.info(f"WER: {wer}")
 
     lm_ppl = float("inf")
+    lm_score_sum = float("inf")
 
     if gen_result.lm_score_t != 0 and gen_result.lengths_hyp_t > 0:
         hyp_len = gen_result.lengths_hyp_t
@@ -633,6 +666,8 @@ def main(cfg: UnsupGenerateConfig, model=None):
             10, -gen_result.lm_score_t / (hyp_len + gen_result.num_sentences)
         )
         logger.info(f"LM PPL: {lm_ppl}")
+        lm_score_sum = -gen_result.lm_score_t
+        logger.info(f"LM Score Sum: {lm_score_sum}")
 
     logger.info(
         "| Processed {} sentences ({} tokens) in {:.1f}s ({:.2f}"
