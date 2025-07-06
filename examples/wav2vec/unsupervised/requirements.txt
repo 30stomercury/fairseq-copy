@@ -5,5 +5,5 @@ editdistance
 g2p_en
 fasttext
 flashlight-text
-/lustre/s2196654/sequence
-/lustre/s2196654/unsupervised-asr/master.zip 
+#~/s2196654/sequence
+#~/s2196654/unsupervised-asr/master.zip 
