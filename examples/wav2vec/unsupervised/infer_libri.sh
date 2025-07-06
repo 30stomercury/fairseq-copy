@@ -6,7 +6,7 @@ unmatched_path=exp/train-clean-100/wav2vec_vox_new/unmatched
 UNIT=phone
 if [[ "$UNIT" == "phone" ]]; then
     lm_weight=2.0
-    word_score=-3
+    word_score=-1
     beam_size=10
     python3 scripts/generate_lexicon.py -i $unmatched_path/phones/dict.phn.txt -o $unmatched_path/phones/lexicon.phone.lst
     TARGET_DATA=${PWD}/exp/train-clean-100/wav2vec2_large_960/matched/valid.phn
@@ -32,8 +32,8 @@ fi
 
 # w2v-u
 #ckpt_path=multirun/2024-10-23/17-25-48/
+#ckpt_path=multirun/2025-02-02/22-17-41
 # hsmm
-#ckpt_path=multirun/2024-11-13/13-03-33/
 ckpt_path=multirun/2025-01-30/23-13-34/
 cp -n ${PWD}/${matched_path}/feat/precompute_pca512_cls128_mean_pooled/valid.phn ${TASK_DATA}
 cp -n ${PWD}/${unmatched_path}/phones/dict.txt ${TASK_DATA}/dict.phn.txt
@@ -50,7 +50,7 @@ echo "ckpt: $ckpt_path"
 echo "dict: ${PWD}/${unmatched_path}/phones/dict.txt"
 
 
-for seed in 0
+for seed in 3
 do
 python3 w2vu_generate.py --config-dir config/generate --config-name $config_name \
     fairseq.common.user_dir=${FAIRSEQ_ROOT}/examples/wav2vec/unsupervised \

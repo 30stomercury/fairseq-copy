@@ -63,6 +63,7 @@ class Wav2vec_UConfig(FairseqDataclass):
     generator_batch_norm: int = 0
     generator_batch_norm_init_stats: str = ""
     generator_residual: bool = False
+    pca_path: str = ""
 
     blank_weight: float = 0
     blank_mode: str = "add"
@@ -313,6 +314,12 @@ class Generator(nn.Module):
             ),
             TransposeLast(),
         )
+        
+        self.pca = False
+        if cfg.pca_path != "":
+            self.pca_A = torch.from_numpy(np.load(cfg.pca_path + f"{cfg.input_dim}_pca_A.npy")).cuda()
+            self.pca_b = torch.from_numpy(np.load(cfg.pca_path + f"{cfg.input_dim}_pca_b.npy")).cuda()
+            self.pca = True
 
         if self.batch_norm:
             self.bn = nn.BatchNorm1d(input_dim)
@@ -331,6 +338,8 @@ class Generator(nn.Module):
 
         if self.batch_norm:
             dense_x = self.bn_padded_data(dense_x, dense_padding_mask)
+        if self.pca:
+            dense_x = torch.matmul(dense_x, self.pca_A) + self.pca_b
         if self.residual:
             inter_x = self.in_proj(self.dropout(dense_x))
             dense_x = dense_x + inter_x
